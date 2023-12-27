@@ -8,6 +8,7 @@ size(Ewindow);
 psi_gamma=psiS(:,Ewindow); % Get the closest eigenfunctions insorted
 EW=E(Ewindow); 
 [delta_gamma,index_close]=sort(abs(EW-gamma));
+delta_gamma
 psi_gamma=psi_gamma(:,index_close);
 
 
