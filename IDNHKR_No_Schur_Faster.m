@@ -12,8 +12,8 @@ close all
 % g4=0.003
 %==========================================================================
 % System Parameters
-N_1=125; 
-% N_1=500; 
+% N_1=125; 
+N_1=500; 
 % N_1=2000; 
 N = 2*N_1; % Hilbert space dimension
 K_class =10; % Classical Kicking 
@@ -25,61 +25,26 @@ hole_upper=0.6;
 hole_lower=N*hole_lower;
 hole_upper=N*hole_upper;
 R=0.2% This is the reflection strength R=exp(-gamma)*I_{MxM: M<N}
-gamma=0.22 % gamma_nat
+% gamma=0.22 % gamma_nat
 % gamma=0.35
-% gamma=0.48 % gamma_typ
+gamma=0.48 % gamma_typ
 % gamma=0.75
 % gamma=0.88 % gamma_inv
-dgamma=0.005
+dgamma=0.0118
 % dgamma=0.02
+
 %==========================================================================
-%   Matrix Construction and Schur decompesition
+%  Spectral Stuff 
 %==========================================================================
 
-
+% Diagonalisation
 U=zeros(N,N); % Initialise Flouqet matrix
-tic
 U=UCheck(N,N_1,K_class,T,R,hole_lower,hole_upper,str_ext);% Check if matrix exists, if it does load it, else make and save it
 [psiS,En]=ECheck(U,N,N_1,K_class,T,R,str_ext);% Check if matrix exists, if it does load it, else make and save it
 toc
-
-
-%==========================================================================
-%   Project onto Subspace of stability
-%==========================================================================
-
-% [psiS,Es]=REig(En,psi,N,set_efn) ;   % Reorder efn/values
-
 Es=diag(En);
-
-% [psi_2,n_efn]=Psi_lifetime(psiS,Es,eps,set_stability);
-%==========================================================================
-% Find eigenfuction with decay rate in a given window gamma \pm dgamma
-%==========================================================================
-
-% figure(1)
-% clf
-% hold on
-% g1=plot((real(Es)),imag(Es),'k.','Markersize',5);
-% 
-% title('\epsilon_n=\theta_n-i\gamma_n')
-
-
 E=1i*log(diag(En));
-% return
-
-% figure(2)
-% clf
-% hold on
-% g1=plot((real(E)+pi)./(2*pi),-2*imag(E),'k.','Markersize',10);
-% g2=plot(linspace(0,1,100),gamma+dgamma,'b.-'); 
-% g2=plot(linspace(0,1,100),gamma-dgamma,'b.-'); 
-% xlabel('\theta_n')
-% ylabel('-\gamma_n')
-% title('\epsilon_n=\theta_n-i\gamma_n')
-% axis([0 1 0 1.5])
-
-
+"sort out this bit"
 figure
 clf
 hold on
@@ -94,60 +59,52 @@ axis([0 1 0 1.1])
 set ( gca, 'xdir', 'reverse' )
 % return
 
+%==========================================================================
+%  Husimi Stuff 
+%==========================================================================
+
 psi_gamma=get_lifetime_window(psiS,E,gamma,dgamma);
-
-% return
-
 n_efn=size(psi_gamma,2)
-% return
-% return
-% Discrete Phase Space Grid
-% n_efn=1
-Hus=zeros(N,N,n_efn);
-q = linspace(0,1,N); % q interval
-p = linspace(0,1,N); % p interval
-[qmesh,pmesh]=meshgrid(q,p); 
-z = (qmesh+1i*(pmesh)); 
-Hus = zeros(N,N); % Average Husimi function array
-cs=zeros(N,N);
-norm_cs= (2/N)^0.25; % Normalisation constant for the coherent state
-tic
-% return
-for itt = 1:N-1
-    itt
-   
-    cs=Cs_create_component(itt,norm_cs,N,q,z,cs); 
-    
-
-    
-    phi2(1,1,:)=psi_gamma(itt,:);
-    Hus=Hus+conj(cs).*phi2;
-    
-
-    cs(:,:)=0;
-end
-toc
-
-
+pause(1)
+[q,p,z,dz]=get_husimi_grid(N);
+Hus=get_husimi(N,n_efn,q,p,z,psi_gamma);
 Hus_av=zeros(N,N);
 
-for itt=1:n_efn
 
-Hus_av=Hus_av+abs(Hus(:,:,itt)).^2;
+for itt=1:n_efn
+   
+    Hus_av=Hus_av+abs(Hus(:,:,itt)).^2;
+    
+    figure
+    clf
+    imagesc(q,p,abs(Hus(:,:,itt)).^2)
+    % colorbar
+    % caxis([0 1])
+    colormap(flipud(inferno))
+    title(strcat('state',num2str(itt)))
+    set(gca,'YDir','normal')
+
+end
+
+
+str_title='Average_nefn_:';
+str_title_num=num2str(n_efn);
+str_gamma='_dgamma_';
+str_gamma_num= strrep(num2str(dgamma),'.','p');
+str_average_title=strcat(str_title,str_title_num,str_gamma,str_gamma_num)
 
 figure
 clf
-imagesc(q,p,abs(Hus(:,:,itt)).^2)
+imagesc(q,p,Hus_av./n_efn)
 % colorbar
 % caxis([0 1])
 colormap(flipud(inferno))
-title(strcat('state',num2str(itt)))
+title(str_average_title)
 set(gca,'YDir','normal')
 
-end
-
-
-return
+%==========================================================================
+%  Entropy Stuff 
+%==========================================================================
 
 viridis=viridis();
 
